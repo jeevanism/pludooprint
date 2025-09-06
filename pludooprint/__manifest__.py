@@ -11,6 +11,9 @@
     "data": [
         "views/report_layout_pluto.xml",
     ],
+    "external_dependencies": {
+        "python": ["plutoprint"]
+    },
     "installable": True,
     "application": False,
 }
