@@ -3,7 +3,10 @@
 
 This Odoo module replaces the default `wkhtmltopdf` library with the modern, lightweight **PlutoPrint** engine for QWeb PDF report generation.
 
-PlutoPrint offers a robust and simple API to convert HTML and XML content into high-quality PDFs and images. It's built on the reliable PlutoBook rendering engine, making it an excellent choice for generating reports, invoices, and other documents.
+[PlutoPrint](https://github.com/plutoprint/plutoprint)
+ offers a robust and simple API to convert HTML and XML content into high-quality PDFs and images. It's built on the reliable PlutoBook rendering engine, making it an excellent choice for generating reports, invoices, and other documents.
+
+
 
 ## Why use PlutoPrint?
 
