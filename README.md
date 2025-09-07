@@ -44,7 +44,8 @@ This Odoo module replaces the default `wkhtmltopdf` library with the modern, lig
 
 ----------
 Run Odoo Test
-    odoo-bin  -c odoo.conf   -d <database>   --init pludooprint   --test-enable   --stop-after-init   --log-level=debug
+
+` odoo-bin  -c odoo.conf   -d <database>   --init pludooprint   --test-enable   --stop-after-init   --log-level=debug `
 ----------
 
 ## License
