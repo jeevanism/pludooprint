@@ -1,15 +1,24 @@
 {
     "name": "PlutoPrint PDF Engine",
     "summary": """
-                    Replace wkhtmltopdf with PlutoPrint for QWeb PDF report.
-                    PlutoPrint git repo: https://github.com/plutoprint/plutoprint
+                Replace wkhtmltopdf with PlutoPrint for QWeb PDF report generation. 
                 """,
-    "version": "17.0.1.0.0",
-    "license": "LGPL-3",
+    "description": """
+                This Odoo module replaces the default wkhtmltopdf library with the modern, lightweight PlutoPrint engine for QWeb PDF report generation. This integration is  in developer beta, and not ready for production use. We welcome code, feature contributions, and further testing.
+
+                ** https://github.com/jeevanism/pludooprint **
+
+                **PlutoPrint** is a lightweight and easy-to-use Python library for generating high-quality PDFs and images directly from HTML or XML content. It is based on **PlutoBook**’s robust rendering engine and provides a simple API to convert your HTML into crisp PDF documents or vibrant image files. This makes it ideal for reports, invoices, or visual snapshots.
+
+                **https://pypi.org/project/plutoprint**
+
+                """,
+    "version": "18.0.0.0.1",
+    "license": "GPL-3",
     "author": "Jeevanism@CodeWasher",
+    "website": "https://www.jeevanism.com",
     "depends": ["web"],
     "data": [
-        "views/report_layout_pluto.xml",
     ],
     "external_dependencies": {
         "python": ["plutoprint"]
