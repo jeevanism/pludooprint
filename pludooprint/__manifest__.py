@@ -14,10 +14,11 @@
 
                 """,
     "version": "18.0.0.0.1",
-    "license": "GPL-3",
+    "license": "AGPL-3",
     "author": "Jeevanism@CodeWasher",
     "website": "https://www.jeevanism.com",
-    "depends": ["web"],
+    "images": ["static/description/icon.png"],
+    "depends": ["base","web"],
     "data": [
     ],
     "external_dependencies": {
