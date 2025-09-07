@@ -44,18 +44,6 @@ This Odoo module replaces the default `wkhtmltopdf` library with the modern, lig
 ## License
 
 This project is licensed under the **GNU Affero General Public License version 3** (AGPL-3).
-
-### Why AGPL-3 for Web Apps?
-
-The AGPL-3 closes the "SaaS loophole" that is not covered by the standard GPL.
-
--   Under the **GPL**, if you modify software and run it on a server without distributing it to users, you are not required to share the source code.
-    
--   However, with the **AGPL-3**, if you run a modified version of the software on a server and users interact with it remotely (e.g., via a web app), you **must** provide those users access to the modified source code.
-    
-
-This ensures that all improvements or changes to the web application remain open source and accessible to the community, even if the software is never physically distributed.
-
 For more details, see the `LICENSE` file in the repository.
 
 
