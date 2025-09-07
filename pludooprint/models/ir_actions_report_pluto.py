@@ -100,12 +100,8 @@ class IrActionsReportPluto(models.Model):
         add_ctx = {"debug": False}
         data.setdefault("debug", False)
         full_html = self.with_context(**add_ctx)._render_qweb_html(report_ref, all_res_ids_wo_stream, data=data)[0]
-
-        # Add this line to debug the HTML output
-        print(f"\n\n--- RENDERED HTML FOR {report_ref} ---\n")
-        print(full_html)
-        print("\n\n---------------------------------------\n")
         
+
         # 4) Extract ids & overrides (API parity with core)
         bodies, html_ids, header_html, footer_html, specific = self.with_context(**add_ctx)._prepare_html(
             full_html, report_model=report_sudo.model
@@ -146,21 +142,6 @@ class IrActionsReportPluto(models.Model):
         else:
             # One PDF per record: hide everything except header/footer and the target .article
             for rid in res_ids_wo_stream:
-                show_one_css = f"""
-                    /* hide all high-level siblings except header/footer/article */
-                    #wrapwrap > *:not(.header):not(.footer):not(.article) {{ display: none !important; }}
-
-                    /* hide all articles; show only the target */
-                    .article {{ display: none !important; }}
-                    .article[data-oe-model="{model_name}"][data-oe-id="{rid}"] {{ display: block !important; }}
-
-                    /* extra safety for quote-builder/brochure sections */
-                    .o_quote_builder_cover,
-                    .o_quote_builder_page,
-                    .o_qb_page,
-                    .o_qb_section {{ display: none !important; }}
-                """
-                # doc = _inject_many_css(full_html, [engine_css, show_one_css])
                 doc = _inject_many_css(full_html, [engine_css])
                 pdf_bytes = self._render_with_plutoprint(doc, cookie_header)
                 per_body_streams.append(io.BytesIO(pdf_bytes))
