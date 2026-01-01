@@ -3,6 +3,7 @@ from unittest.mock import patch, Mock
 from odoo.tests import TransactionCase, tagged
 from odoo.exceptions import UserError
 from odoo.tools import config
+from odoo.addons.pludooprint.models.plutoprint_helpers import build_engine_css
 try:
     from odoo.tools.pdf import PdfWriter, PdfReader
 
@@ -75,9 +76,7 @@ class TestIrActionsReportPlutoHelpers(TransactionCase):
         buf.seek(0)
         return buf
 
-    def test_paperformat_to_css_rules_basic_and_landscape(self):
-        rpt = self.Report
-
+    def test_build_engine_css_basic_and_landscape(self):
         class P:
             format = "A4"
             page_width = None
@@ -87,14 +86,10 @@ class TestIrActionsReportPlutoHelpers(TransactionCase):
             margin_left = 7
             margin_right = 7
             header_spacing = 3
-        css1 = rpt._paperformat_to_css_rules(
-            P, specific_args={'data-report-header-spacing': 5}, landscape=False
-        )
+        css1 = build_engine_css(P, specific_args={}, landscape=False)
         assert "size: A4;" in css1, css1
-        assert "padding-bottom: 5mm" in css1, css1
-        css2 = rpt._paperformat_to_css_rules(
-            P, specific_args={'data-report-landscape': True}, landscape=None
-        )
+        assert "margin: 2mm 7mm 2mm 7mm;" in css1, css1
+        css2 = build_engine_css(P, specific_args={'data-report-landscape': True}, landscape=None)
         assert "size: A4 landscape;" in css2, css2
 
     def test_merge_streams_combines_pages(self):
@@ -164,7 +159,7 @@ class TestIrActionsReportPlutoBehavior(TransactionCase):
     def test_render_prepare_streams_with_fake_pluto(self):
         rpt = self.Report
 
-        def _fake_render_with_plutoprint(self, html_bytes, cookie_header):
+        def _fake_render_with_plutoprint(self, html_bytes, cookie_header, paperformat=None):
             buf = io.BytesIO()
             writer = _make_writer()
             _add_blank_page(writer, width=72, height=72)
