@@ -3,12 +3,16 @@ import logging
 from typing import Dict, List, Optional
 import requests
 import urllib.parse
+from collections import OrderedDict
+from PIL import Image
 
-from odoo import api, models, _
+from odoo import api, models, tools, _
 from odoo.exceptions import UserError
 from odoo.http import request, root
 from odoo.service import security
 from odoo.tools.pdf import PdfFileReader, PdfFileWriter
+
+from .plutoprint_helpers import build_engine_css, inject_css
 
 _logger = logging.getLogger(__name__)
 
@@ -33,7 +37,6 @@ class IrActionsReportPluto(models.Model):
             res_ids = [res_ids]
         data.setdefault("report_type", "pdf")
 
-        from odoo import tools
         if (tools.config['test_enable'] or tools.config['test_file']) and not self.env.context.get('force_report_rendering'):
             return self._render_qweb_html(report_ref, res_ids, data=data)
 
@@ -52,9 +55,6 @@ class IrActionsReportPluto(models.Model):
         report_sudo = self._get_report(report_ref)
         has_duplicated_ids = bool(
             res_ids and len(res_ids) != len(set(res_ids)))
-
-        from collections import OrderedDict
-        from PIL import Image
 
         collected_streams = OrderedDict()
         if res_ids:
@@ -92,9 +92,11 @@ class IrActionsReportPluto(models.Model):
         full_html = self.with_context(
             **add_ctx)._render_qweb_html(report_ref, all_res_ids_wo_stream, data=data)[0]
 
-        bodies, html_ids, header_html, footer_html, specific = self.with_context(**add_ctx)._prepare_html(
+        unused_body, html_ids, unused_header, unused_footer, specific = self.with_context(**add_ctx)._prepare_html(
             full_html, report_model=report_sudo.model
         )
+        if _logger.isEnabledFor(logging.DEBUG):
+            _logger.debug("PlutoPrint render HTML bytes: %s", len(full_html))
 
         if (not has_duplicated_ids and report_sudo.attachment
                 and set(res_ids_wo_stream) != set([x for x in html_ids if x])):
@@ -106,31 +108,23 @@ class IrActionsReportPluto(models.Model):
             ))
 
         paperformat = self._resolve_paperformat(report_ref)
-        engine_css = self._paperformat_to_css_rules(
-            paperformat, specific, landscape=self._context.get("landscape"))
+        engine_css = build_engine_css(
+            paperformat, specific, landscape=self._context.get("landscape")
+        )
 
         cookie_header = self._build_cookie_header_for_assets()
 
-        def _inject_many_css(doc_bytes: bytes, css_list: List[str]) -> bytes:
-            marker = b"<head>"
-            pos = doc_bytes.find(marker)
-            if pos != -1:
-                injection = ("<style>" + "\n".join(css_list) +
-                             "</style>").encode("utf-8")
-                return doc_bytes[:pos + len(marker)] + injection + doc_bytes[pos + len(marker):]
-            return doc_bytes
-
         per_body_streams: List[io.BytesIO] = []
-        model_name = report_sudo.model
 
         if has_duplicated_ids or not res_ids:
-            doc = _inject_many_css(full_html, [engine_css])
+            doc = inject_css(full_html, [engine_css])
             per_body_streams.append(io.BytesIO(
-                self._render_with_plutoprint(doc, cookie_header)))
+                self._render_with_plutoprint(doc, cookie_header, paperformat=paperformat)))
         else:
             for rid in res_ids_wo_stream:
-                doc = _inject_many_css(full_html, [engine_css])
-                pdf_bytes = self._render_with_plutoprint(doc, cookie_header)
+                doc = inject_css(full_html, [engine_css])
+                pdf_bytes = self._render_with_plutoprint(
+                    doc, cookie_header, paperformat=paperformat)
                 per_body_streams.append(io.BytesIO(pdf_bytes))
 
         if has_duplicated_ids or not res_ids:
@@ -156,46 +150,6 @@ class IrActionsReportPluto(models.Model):
     def _resolve_paperformat(self, report_ref):
         report = self._get_report(report_ref) if report_ref else self
         return report.get_paperformat()
-
-    def _paperformat_to_css_rules(self, paper, specific_args: Optional[Dict], landscape: Optional[bool]) -> str:
-        specific_args = specific_args or {}
-
-        if landscape is None and specific_args.get('data-report-landscape'):
-            landscape = specific_args.get(
-                'data-report-landscape') in (True, "True", "true", "1")
-
-        size_css = ""
-        if paper.format and paper.format != "custom":
-            size_css = f"size: {paper.format};"
-        elif paper.page_width and paper.page_height:
-            w = f"{paper.page_width}mm"
-            h = f"{paper.page_height}mm"
-            size_css = f"size: {w} {h};"
-
-        mt = specific_args.get('data-report-margin-top') or paper.margin_top
-        mb = specific_args.get(
-            'data-report-margin-bottom') or paper.margin_bottom
-        mr = paper.margin_right
-        ml = paper.margin_left
-
-        header_spacing = specific_args.get(
-            'data-report-header-spacing') or (paper.header_spacing or 0)
-
-        if paper.format and paper.format != "custom" and landscape:
-            size_css = f"size: {paper.format} landscape;"
-        elif landscape and paper.page_width and paper.page_height:
-            w = f"{paper.page_height}mm"
-            h = f"{paper.page_width}mm"
-            size_css = f"size: {w} {h};"
-
-        css = f"""
-        @page {{
-            {size_css}
-            margin: {mt}mm {mr}mm {mb}mm {ml}mm;
-        }}
-        .header {{ padding-bottom: {header_spacing}mm; }}
-        """
-        return css
 
     def _merge_streams(self, streams: List[io.BytesIO]) -> io.BytesIO:
         writer = PdfFileWriter()
@@ -230,7 +184,7 @@ class IrActionsReportPluto(models.Model):
                 "Failed to create temporary session cookie for report assets.")
         return None
 
-    def _render_with_plutoprint(self, html_bytes: bytes, cookie_header: Optional[str]) -> bytes:
+    def _render_with_plutoprint(self, html_bytes: bytes, cookie_header: Optional[str], paperformat=None) -> bytes:
         if not HAS_PLUTOPRINT:
             raise UserError(_("PlutoPrint is not available."))
 
@@ -293,7 +247,58 @@ class IrActionsReportPluto(models.Model):
                 self._cache[url] = rd
                 return rd
 
-        book = plutoprint.Book(media=plutoprint.MEDIA_TYPE_PRINT)
+        page_size = plutoprint.PAGE_SIZE_A4
+        if paperformat:
+            format_key = (paperformat.format or "").upper()
+            _logger.info(
+                "PlutoPrint paperformat received: name=%s format=%s orientation=%s page_width=%s page_height=%s margins(top/right/bottom/left)=%s/%s/%s/%s",
+                getattr(paperformat, "name", None),
+                getattr(paperformat, "format", None),
+                getattr(paperformat, "orientation", None),
+                getattr(paperformat, "page_width", None),
+                getattr(paperformat, "page_height", None),
+                getattr(paperformat, "margin_top", None),
+                getattr(paperformat, "margin_right", None),
+                getattr(paperformat, "margin_bottom", None),
+                getattr(paperformat, "margin_left", None),
+            )
+            page_sizes = {
+                "A3": plutoprint.PAGE_SIZE_A3,
+                "A4": plutoprint.PAGE_SIZE_A4,
+                "A5": plutoprint.PAGE_SIZE_A5,
+                "B4": plutoprint.PAGE_SIZE_B4,
+                "B5": plutoprint.PAGE_SIZE_B5,
+                "LETTER": plutoprint.PAGE_SIZE_LETTER,
+                "LEGAL": plutoprint.PAGE_SIZE_LEGAL,
+                "LEDGER": plutoprint.PAGE_SIZE_LEDGER,
+            }
+            if format_key == "CUSTOM" and paperformat.page_width and paperformat.page_height:
+                page_size = plutoprint.PageSize(
+                    paperformat.page_width * plutoprint.UNITS_MM,
+                    paperformat.page_height * plutoprint.UNITS_MM,
+                )
+            else:
+                page_size = page_sizes.get(format_key, page_size)
+
+            if paperformat.orientation == "Landscape":
+                page_size = page_size.landscape()
+            else:
+                page_size = page_size.portrait()
+
+            margins = plutoprint.PageMargins(
+                top=paperformat.margin_top * plutoprint.UNITS_MM,
+                right=paperformat.margin_right * plutoprint.UNITS_MM,
+                bottom=paperformat.margin_bottom * plutoprint.UNITS_MM,
+                left=paperformat.margin_left * plutoprint.UNITS_MM,
+            )
+        else:
+            margins = plutoprint.PAGE_MARGINS_NONE
+
+        book = plutoprint.Book(
+            page_size,
+            margins,
+            media=plutoprint.MEDIA_TYPE_PRINT
+        )
         book.custom_resource_fetcher = OdooResourceFetcher(
             base_url, cookie_header)
 
