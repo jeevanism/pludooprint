@@ -1,3 +1,4 @@
+[pludoo1.webm](https://github.com/user-attachments/assets/e1cb4fc1-7cbf-448a-9eb7-2815102166bf)
 # PludooPrint - A PlutoPrint PDF Engine integration with Odoo
 
 ![PludooPrint](pludooprint.gif)
