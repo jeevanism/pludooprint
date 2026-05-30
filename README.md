@@ -1,8 +1,6 @@
-[pludoo1.webm](https://github.com/user-attachments/assets/e1cb4fc1-7cbf-448a-9eb7-2815102166bf)
 # PludooPrint - A PlutoPrint PDF Engine integration with Odoo
 
-![PludooPrint](pludooprint.gif)
-<video src="media/pludoo1.webm" autoplay loop muted controls width="100%"></video>
+[pludoo1.webm](https://github.com/user-attachments/assets/e1cb4fc1-7cbf-448a-9eb7-2815102166bf)
 
 This Odoo module replaces the default `wkhtmltopdf` library with the modern, lightweight **PlutoPrint** engine for QWeb PDF report generation.
 
