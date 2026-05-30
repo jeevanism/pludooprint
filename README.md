@@ -8,6 +8,8 @@ This Odoo module replaces the default `wkhtmltopdf` library with the modern, lig
 offers a robust and simple API to convert HTML and XML content into high-quality PDFs and images. It's built on the reliable PlutoBook rendering engine, making it an excellent choice for generating reports, invoices, and other documents.
 
 An example complex Sale Order PDF is added here
+[SaleOrder123.pdf](https://github.com/user-attachments/files/28426428/Quotation.-.S00027.pdf)
+
 
 ## Why use PlutoPrint?
 
