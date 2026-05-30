@@ -3,7 +3,7 @@ from unittest.mock import patch, Mock
 from odoo.tests import TransactionCase, tagged
 from odoo.exceptions import UserError
 from odoo.tools import config
-from odoo.addons.pludooprint.models.plutoprint_helpers import build_engine_css
+from ..models.plutoprint_helpers import build_engine_css
 try:
     from odoo.tools.pdf import PdfWriter, PdfReader
 
@@ -88,7 +88,7 @@ class TestIrActionsReportPlutoHelpers(TransactionCase):
             header_spacing = 3
         css1 = build_engine_css(P, specific_args={}, landscape=False)
         assert "size: A4;" in css1, css1
-        assert "margin: 2mm 7mm 2mm 7mm;" in css1, css1
+        assert "margin: 10.0mm 7.0mm 15.0mm 7.0mm;" in css1, css1
         css2 = build_engine_css(P, specific_args={'data-report-landscape': True}, landscape=None)
         assert "size: A4 landscape;" in css2, css2
 
@@ -96,7 +96,7 @@ class TestIrActionsReportPlutoHelpers(TransactionCase):
         rpt = self.Report
         a = self._tiny_pdf()
         b = self._tiny_pdf()
-        merged = rpt._merge_streams([a, b])
+        merged = rpt._merge_pdfs([a, b])
         merged.seek(0)
         reader = _read_reader(merged)
         assert _num_pages(reader) == 2, "Merged PDF should have 2 pages"
@@ -125,6 +125,19 @@ class TestIrActionsReportPlutoBehavior(TransactionCase):
             is_invoice_report = False
             def retrieve_attachment(self, rec): return None
             def get_paperformat(self): return DummyPaper()
+            def with_context(self, *args, **kwargs): return self
+            def _prepare_html(self, html, report_model=False):
+                return (
+                    [
+                        b"<html><head></head><body>"
+                        b"<div id='wrapwrap'><div class='article' data-oe-model='res.partner' data-oe-id='1'>X</div></div>"
+                        b"</body></html>"
+                    ],
+                    [1],
+                    None,
+                    None,
+                    {}
+                )
         return DummyReport()
 
     def test_pre_render_qweb_pdf_respects_test_mode(self):
@@ -137,7 +150,7 @@ class TestIrActionsReportPlutoBehavior(TransactionCase):
                 patch.object(type(rpt), "_render_qweb_html",
                              return_value=(b"<html>ok</html>", "html")) as mock_html:
                 html_or_streams, out_type = rpt._pre_render_qweb_pdf(
-                    "pludooprint.report_dummy",
+                    f"{ADDON}.report_dummy",
                     res_ids=[1],
                     data={}
                 )
@@ -154,12 +167,12 @@ class TestIrActionsReportPlutoBehavior(TransactionCase):
                 patch(f"{TARGET}.HAS_PLUTOPRINT", False):
             with self.assertRaises(UserError):
                 rpt._render_qweb_pdf_prepare_streams(
-                    "pludooprint.report_dummy", data={}, res_ids=[1])
+                    f"{ADDON}.report_dummy", data={}, res_ids=[1])
 
     def test_render_prepare_streams_with_fake_pluto(self):
         rpt = self.Report
 
-        def _fake_render_with_plutoprint(self, html_bytes, cookie_header, paperformat=None):
+        def _fake_render_with_plutoprint(self, html_bytes, cookie_header, paperformat=None, **kwargs):
             buf = io.BytesIO()
             writer = _make_writer()
             _add_blank_page(writer, width=72, height=72)
@@ -169,24 +182,8 @@ class TestIrActionsReportPlutoBehavior(TransactionCase):
                 patch(f"{TARGET}.HAS_PLUTOPRINT", True), \
                 patch.object(type(rpt), "_render_with_plutoprint", _fake_render_with_plutoprint), \
                 patch.object(type(rpt), "_render_qweb_html",
-                             return_value=(b"<html><head></head><body>"
-                                           b"<div id='wrapwrap'><div class='article' "
-                                           b"data-oe-model='res.partner' data-oe-id='1'>X</div></div>"
-                                           b"</body></html>", "html")), \
-                patch.object(type(rpt), "_prepare_html", return_value=(
-                    b"<html><head></head><body>"
-                    b"<div id='wrapwrap'><div class='article' data-oe-model='res.partner' data-oe-id='1'>X</div></div>"
-                    b"</body></html>",
-                    [1], None, None, {}
-                )), \
-                patch.object(type(rpt), "_resolve_paperformat") as mock_paper:
-            class DummyPaper:
-                format = "A4"
-                page_width = page_height = None
-                margin_top = margin_bottom = margin_left = margin_right = 10
-                header_spacing = 0
-            mock_paper.return_value = DummyPaper()
+                             return_value=(b"<html>ok</html>", "html")):
             result = rpt._render_qweb_pdf_prepare_streams(
-                "pludooprint.report_dummy", data={}, res_ids=[1])
+                f"{ADDON}.report_dummy", data={}, res_ids=[1])
             assert 1 in result, "Expected key for res_id=1 in mapping"
             assert result[1]["stream"] is not None, "Expected a PDF stream for res_id=1"

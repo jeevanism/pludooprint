@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- Define the standalone Matrix document template -->
+    <template id="report_saleorder_matrix_document">
+        <t t-call="web.external_layout">
+            <!-- Custom print styling tailored for print viewport page-breaks and typography -->
+            <style>
+                .complex-enterprise-so {
+                    font-family: 'Inter', 'Roboto', 'Helvetica Neue', sans-serif !important;
+                    color: #333333;
+                }
+                .complex-enterprise-so h1 {
+                    font-size: 20pt !important;
+                    font-weight: 700;
+                    color: #1e293b;
+                    margin-bottom: 15px;
+                }
+                .complex-enterprise-so label {
+                    font-size: 7.5pt !important;
+                    font-weight: 700 !important;
+                    color: #475569;
+                }
+                .complex-enterprise-so .bg-light {
+                    background-color: #f8fafc !important;
+                }
+                .complex-enterprise-so .border {
+                    border: 1px solid #e2e8f0 !important;
+                }
+                .complex-enterprise-so .badge {
+                    font-size: 7pt !important;
+                    padding: 4px 8px !important;
+                    border-radius: 4px !important;
+                }
+                .complex-enterprise-so .badge.bg-primary {
+                    background-color: #3b82f6 !important;
+                    color: #ffffff !important;
+                }
+                .complex-enterprise-so .badge.bg-success {
+                    background-color: #10b981 !important;
+                    color: #ffffff !important;
+                }
+                .complex-enterprise-so .badge.bg-danger {
+                    background-color: #ef4444 !important;
+                    color: #ffffff !important;
+                }
+                .complex-enterprise-so .badge.bg-warning {
+                    background-color: #f59e0b !important;
+                    color: #ffffff !important;
+                }
+                .complex-enterprise-so .o_notebook_headers {
+                    border-bottom: 2px solid #e2e8f0;
+                    margin-bottom: 0px;
+                }
+                .complex-enterprise-so .nav-link.active {
+                    font-weight: 700;
+                    color: #0f172a !important;
+                    border-bottom: 3px solid #3b82f6 !important;
+                    padding-bottom: 8px;
+                    font-size: 9pt;
+                    display: inline-block;
+                }
+                .complex-enterprise-so table.o_list_table {
+                    border-collapse: collapse !important;
+                    width: 100%;
+                }
+                .complex-enterprise-so table.o_list_table th {
+                    font-size: 8pt;
+                    font-weight: 700;
+                    color: #475569;
+                    border-bottom: 2px solid #e2e8f0 !important;
+                    padding: 8px 4px !important;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                }
+                .complex-enterprise-so table.o_list_table td {
+                    font-size: 8.5pt;
+                    padding: 8px 4px !important;
+                    border-bottom: 1px solid #f1f5f9 !important;
+                }
+                .complex-enterprise-so table.o_list_table tr.o_data_row {
+                    page-break-inside: avoid !important;
+                }
+                .complex-enterprise-so .border-start {
+                    border-left: 2px solid #cbd5e1 !important;
+                }
+                .complex-enterprise-so .o_notebook {
+                    display: block !important;
+                }
+            </style>
+
+            <div class="o_form_sheet position-relative complex-enterprise-so">
+                <!-- Title -->
+                <div class="oe_title mt-2">
+                    <h1>
+                        <div name="name" class="o_field_widget o_readonly_modifier o_required_modifier o_field_char">
+                            <span>Sale Order: <span t-field="doc.name"/></span>
+                        </div>
+                    </h1>
+                </div>
+
+                <!-- Customer & Supply Chain Grid -->
+                <div class="o_group row align-items-start mb-4">
+                    <!-- Customer Details Box -->
+                    <div class="o_inner_group grid col-6 bg-light p-3 rounded border">
+                        <div class="o_cell o_wrap_label text-break text-900 mb-1">
+                            <label class="o_form_label o_form_label_readonly font-weight-bold text-uppercase" style="font-size: 8pt; letter-spacing: 0.5px;">Customer Matrix</label>
+                        </div>
+                        <div class="o_cell o_wrap_input text-break">
+                            <div name="partner_id" class="o_field_widget o_readonly_modifier o_required_modifier o_field_res_partner_many2one">
+                                <div class="o_many2one">
+                                    <span class="o_form_uri text-truncate d-inline-block w-100 align-bottom font-weight-bold" t-field="doc.partner_id.name"/>
+                                    <div class="o_field_many2one_extra text-muted small mt-1">
+                                        <div class="text-truncate" t-if="doc.partner_id.street">📍 <span t-field="doc.partner_id.street"/></div>
+                                        <div class="text-truncate" t-if="doc.partner_id.city or doc.partner_id.zip">🏙️ <span t-field="doc.partner_id.city"/>, <span t-field="doc.partner_id.state_id.code"/> <span t-field="doc.partner_id.zip"/></div>
+                                        <div class="text-truncate" t-if="doc.partner_id.country_id">🇺🇸 <span t-field="doc.partner_id.country_id.name"/></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Tags as Badges -->
+                        <div class="d-flex gap-1 mt-2 flex-wrap">
+                            <span t-if="doc.partner_id.is_company" class="badge bg-primary text-uppercase">Company Account</span>
+                            <span t-else="" class="badge bg-secondary text-uppercase">Individual Account</span>
+                            <t t-foreach="doc.partner_id.category_id" t-as="tag">
+                                <span class="badge bg-success text-uppercase" t-out="tag.name"/>
+                            </t>
+                        </div>
+                    </div>
+
+                    <!-- Logistics Context Box -->
+                    <div class="o_inner_group grid col-6 bg-light p-3 rounded border">
+                        <div class="o_cell o_wrap_label text-break text-900 mb-1">
+                            <label class="o_form_label o_form_label_readonly font-weight-bold text-uppercase" style="font-size: 8pt; letter-spacing: 0.5px;">Logistics &amp; CRM Context</label>
+                        </div>
+                        <div class="row row-cols-2 g-2 small">
+                            <div><strong>Order Date:</strong> <br/><span class="text-muted" t-field="doc.date_order" t-options="{'widget': 'date'}"/></div>
+                            <div><strong>Account Mgr:</strong> <br/><span class="text-muted" t-field="doc.user_id.name"/></div>
+                            <div><strong>Incoterm:</strong> <br/><span class="text-muted" t-out="doc.incoterm.code if 'incoterm' in doc._fields and doc.incoterm else 'DAP'"/></div>
+                            <div><strong>SLA Level:</strong> <br/>
+                                <span t-if="doc.state == 'sale'" class="badge bg-danger p-1" style="font-size: 6.5pt; font-weight: bold;">Critical 24H</span>
+                                <span t-else="" class="badge bg-warning p-1" style="font-size: 6.5pt; font-weight: bold;">Standard</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notebook Table -->
+                <div class="o_notebook d-flex w-100 horizontal flex-column mt-4">
+                    <div class="o_notebook_headers">
+                        <span class="nav-link active position-relative z-1">Order Lines (Matrix Mode)</span>
+                    </div>
+                    
+                    <div class="o_notebook_content tab-content bg-white border p-3">
+                        <div class="tab-pane active fade show">
+                            <div name="order_line" class="o_field_widget o_field_sol_o2m o_field_one2many">
+                                <div class="o_list_view o_field_x2many o_field_x2many_list">
+                                    <div class="o_list_renderer o_renderer table-responsive" tabindex="-1">
+                                        <table class="o_section_and_note_list_view o_list_table table table-sm table-hover position-relative mb-0 o_list_table_ungrouped table-striped" style="table-layout: fixed; width: 100%;">
+                                            <thead>
+                                                <tr>
+                                                    <th class="align-middle" style="width: 42%;">Product &amp; Embedded Matrix Components</th>
+                                                    <th class="align-middle" style="width: 25%;">Variant Configuration Array</th>
+                                                    <th class="align-middle text-end" style="width: 11%;">Quantity</th>
+                                                    <th class="align-middle text-end" style="width: 11%;">Unit Price</th>
+                                                    <th class="align-middle text-end" style="width: 11%;">Subtotal</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <t t-foreach="doc.order_line" t-as="line">
+                                                    <!-- SECTION ROW -->
+                                                    <tr t-if="line.display_type == 'line_section'" class="bg-dark text-white font-weight-bold">
+                                                        <td colspan="5" class="p-2 align-middle text-uppercase" style="font-size: 8.5pt; border-left: 4px solid #3b82f6; letter-spacing: 0.5px;">
+                                                            📦 <span t-field="line.name"/>
+                                                        </td>
+                                                    </tr>
+                                                    <!-- NOTE ROW -->
+                                                    <tr t-elif="line.display_type == 'line_note'" class="fst-italic text-muted">
+                                                        <td colspan="5" class="p-2 align-middle">
+                                                            📝 <span t-field="line.name"/>
+                                                        </td>
+                                                    </tr>
+                                                    <!-- PRODUCT ROW -->
+                                                    <tr t-else="" class="o_data_row">
+                                                        <td class="align-top py-2">
+                                                            <t t-set="lines" t-value="line.name.split('\n')"/>
+                                                            <div class="font-weight-bold text-dark"><t t-out="lines[0]"/></div>
+                                                            <div class="text-muted small" t-if="line.product_id.default_code">SKU: <span t-field="line.product_id.default_code"/></div>
+                                                            
+                                                            <ul t-if="len(lines) &gt; 1" class="text-muted list-unstyled ps-2 pt-1 mb-0 border-start" style="font-size: 7.5pt; margin-top: 4px;">
+                                                                <t t-foreach="lines[1:]" t-as="desc_line">
+                                                                    <t t-if="desc_line.strip()">
+                                                                        <li>
+                                                                            <t t-if="desc_line.strip().startswith('⚡') or desc_line.strip().startswith('🌀') or desc_line.strip().startswith('🔒') or desc_line.strip().startswith('•')">
+                                                                                <t t-out="desc_line.strip()"/>
+                                                                            </t>
+                                                                            <t t-else="">
+                                                                                • <t t-out="desc_line.strip()"/>
+                                                                            </t>
+                                                                        </li>
+                                                                    </t>
+                                                                </t>
+                                                            </ul>
+                                                        </td>
+                                                        <td class="align-top py-2">
+                                                            <div class="d-flex flex-wrap gap-1 align-content-start h-100">
+                                                                <t t-foreach="line.product_template_attribute_value_ids" t-as="attr">
+                                                                    <span class="border rounded bg-light px-1 text-dark small" style="font-size: 7pt; white-space: nowrap;"><t t-out="attr.display_name"/></span>
+                                                                </t>
+                                                                <t t-if="not line.product_template_attribute_value_ids">
+                                                                    <span class="border rounded bg-light px-1 text-dark small" style="font-size: 7pt; white-space: nowrap;">Standard Spec</span>
+                                                                </t>
+                                                            </div>
+                                                        </td>
+                                                        <td class="text-end align-top py-2 text-nowrap">
+                                                            <span t-field="line.product_uom_qty"/>
+                                                            <span t-field="line.product_uom_id"/>
+                                                        </td>
+                                                        <td class="text-end align-top py-2 text-nowrap">
+                                                            <span t-field="line.price_unit"/>
+                                                        </td>
+                                                        <td class="text-end align-top py-2 font-weight-bold text-nowrap text-primary">
+                                                            <span t-field="line.price_subtotal"/>
+                                                        </td>
+                                                    </tr>
+                                                </t>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Totals Block -->
+                <div class="clearfix mt-4" name="so_total_summary">
+                    <div id="total" class="row mt-n3" name="total">
+                        <div class="col-sm-7 col-md-6 ms-auto">
+                            <table class="o_total_table table table-borderless" style="width: 100%; font-size: 8.5pt;">
+                                <tbody>
+                                    <tr class="border-bottom">
+                                        <td><span>Untaxed Amount</span></td>
+                                        <td class="text-end font-weight-bold">
+                                            <span t-field="doc.amount_untaxed"/>
+                                        </td>
+                                    </tr>
+                                    <tr class="o_total border-top border-bottom">
+                                        <td><strong style="font-size: 10pt; color: #0f172a;">Total</strong></td>
+                                        <td class="text-end font-weight-bold text-primary" style="font-size: 11pt;">
+                                            <span t-field="doc.amount_total"/>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- Inherit sale.report_saleorder_raw and replace its call to sale.report_saleorder_document with our matrix layout -->
+    <template id="report_saleorder_raw_matrix_inherit" inherit_id="sale.report_saleorder_raw">
+        <xpath expr="//t[@t-call='sale.report_saleorder_document']" position="replace">
+            <t t-call="pludooprint.report_saleorder_matrix_document" t-lang="doc.partner_id.lang"/>
+        </xpath>
+    </template>
+
+    <!-- Inherit sale.report_saleorder_pro_forma and replace its call to sale.report_saleorder_document with our matrix layout -->
+    <template id="report_saleorder_pro_forma_matrix_inherit" inherit_id="sale.report_saleorder_pro_forma">
+        <xpath expr="//t[@t-call='sale.report_saleorder_document']" position="replace">
+            <t t-call="pludooprint.report_saleorder_matrix_document" t-lang="doc.partner_id.lang"/>
+        </xpath>
+    </template>
+</odoo>
