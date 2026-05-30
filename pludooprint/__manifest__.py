@@ -22,6 +22,7 @@
     "depends": ["base", "web", "sale", "sale_stock"],
     "data": [
         "reports/report_sale_order_matrix.xml",
+        "views/sale_order_views.xml",
     ],
     "external_dependencies": {"python": ["plutoprint"]},
     "installable": True,

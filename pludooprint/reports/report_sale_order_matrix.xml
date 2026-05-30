@@ -137,8 +137,9 @@
                             <div><strong>Account Mgr:</strong> <br/><span class="text-muted" t-field="doc.user_id.name"/></div>
                             <div><strong>Incoterm:</strong> <br/><span class="text-muted" t-out="doc.incoterm.code if 'incoterm' in doc._fields and doc.incoterm else 'DAP'"/></div>
                             <div><strong>SLA Level:</strong> <br/>
-                                <span t-if="doc.state == 'sale'" class="badge bg-danger p-1" style="font-size: 6.5pt; font-weight: bold;">Critical 24H</span>
-                                <span t-else="" class="badge bg-warning p-1" style="font-size: 6.5pt; font-weight: bold;">Standard</span>
+                                <span t-if="doc.x_sla_level == 'critical_24h'" class="badge bg-danger p-1" style="font-size: 6.5pt; font-weight: bold;">Critical 24H</span>
+                                <span t-elif="doc.x_sla_level == 'express'" class="badge bg-warning p-1" style="font-size: 6.5pt; font-weight: bold;">Express 48H</span>
+                                <span t-else="" class="badge bg-secondary p-1" style="font-size: 6.5pt; font-weight: bold;">Standard</span>
                             </div>
                         </div>
                     </div>
@@ -185,6 +186,9 @@
                                                             <t t-set="lines" t-value="line.name.split('\n')"/>
                                                             <div class="font-weight-bold text-dark"><t t-out="lines[0]"/></div>
                                                             <div class="text-muted small" t-if="line.product_id.default_code">SKU: <span t-field="line.product_id.default_code"/></div>
+                                                            <div t-if="line.x_discount_tier_text" class="text-success font-weight-bold mt-1" style="font-size: 7.5pt;">
+                                                                 💡 <span t-field="line.x_discount_tier_text"/>
+                                                             </div>
                                                             
                                                             <ul t-if="len(lines) &gt; 1" class="text-muted list-unstyled ps-2 pt-1 mb-0 border-start" style="font-size: 7.5pt; margin-top: 4px;">
                                                                 <t t-foreach="lines[1:]" t-as="desc_line">

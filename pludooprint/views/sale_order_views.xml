@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_inherit_matrix" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit.matrix</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <!-- Add Matrix Flag and SLA Level near CRM/Payment terms -->
+            <xpath expr="//field[@name='payment_term_id']" position="after">
+                <field name="x_is_matrix"/>
+                <field name="x_sla_level"/>
+            </xpath>
+            <!-- Add Discount Tier text as a column in the order lines list -->
+            <xpath expr="//list/field[@name='price_unit']" position="before">
+                <field name="x_discount_tier_text" placeholder="e.g. Volume Discount Tier 3 Applied"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
